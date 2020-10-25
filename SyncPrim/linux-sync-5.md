@@ -15,7 +15,7 @@ Reader/Writer semaphore
 
 Actually there are two types of operations may be performed on the data. We may read data and make changes in data. Two fundamental operations - `read` and `write`. Usually (but not always), `read` operation is performed more often than `write` operation. In this case, it would be logical to we may lock data in such way, that some processes may read locked data in one time, on condition that no one will not change the data. The [readers/writer lock](https://en.wikipedia.org/wiki/Readers%E2%80%93writer_lock) allows us to get this lock.
 
-When a process which wants to write something into data, all other `writer` and `reader` processes will be blocked until the process which acquired a lock, will not release it. When a process reads data, other processes which want to read the same data too, will not be locked and will be able to do this. As you may guess, implementation of the `reader/writer semaphore` is based on the implementation of the `normal semaphore`. We already familiar with the [semaphore](https://en.wikipedia.org/wiki/Semaphore_%28programming%29) synchronization primitive from the third [part]((https://0xax.gitbook.io/linux-insides/summary/syncprim/linux-sync-4) of this chapter. From the theoretical side everything looks pretty simple. Let's look how `reader/writer semaphore` is represented in the Linux kernel.
+When a process which wants to write something into data, all other `writer` and `reader` processes will be blocked until the process which acquired a lock, will not release it. When a process reads data, other processes which want to read the same data too, will not be locked and will be able to do this. As you may guess, implementation of the `reader/writer semaphore` is based on the implementation of the `normal semaphore`. We already familiar with the [semaphore](https://en.wikipedia.org/wiki/Semaphore_%28programming%29) synchronization primitive from the third [part](https://0xax.gitbook.io/linux-insides/summary/syncprim/linux-sync-4) of this chapter. From the theoretical side everything looks pretty simple. Let's look how `reader/writer semaphore` is represented in the Linux kernel.
 
 The `semaphore` is represented by the:
 
@@ -149,7 +149,7 @@ config RWSEM_XCHGADD_ALGORITHM
 	def_bool 64BIT
 ```
 
-in the [arch/x86/um/Kconfig](https://github.com/torvalds/linux/blob/16f73eb02d7e1765ccab3d2018e0bd98eb93d973/arch/x86/um/Kconfig) kernel configuration file. In this case, implementation of the `__init_rwsem` function will be located in the [kernel/locking/rwsem-xadd.c](https://github.com/torvalds/linux/blob/16f73eb02d7e1765ccab3d2018e0bd98eb93d973/locking/rwsem-xadd.c) source code file for us. Let's take a look at this function:
+in the [arch/x86/um/Kconfig](https://github.com/torvalds/linux/blob/16f73eb02d7e1765ccab3d2018e0bd98eb93d973/arch/x86/um/Kconfig) kernel configuration file. In this case, implementation of the `__init_rwsem` function will be located in the [kernel/locking/rwsem.c](https://github.com/torvalds/linux/blob/master/kernel/locking/rwsem.c) source code file for us. Let's take a look at this function:
 
 ```C
 void __init_rwsem(struct rw_semaphore *sem, const char *name,
@@ -249,7 +249,7 @@ As for other synchronization primitives which we saw in this chapter, usually `l
 #define RWSEM_ACTIVE_BIAS               0x00000001L
 ```
 
-or `0xffffffff00000001` to the `count` of the given `reader/writer semaphore` and returns previous value of it. After this we check the active mask in the `rw_semaphore->count`. If it was zero before, this means that there were no-one writer before, so we acquired a lock. In other way we call the `call_rwsem_down_write_failed` function from the [arch/x86/lib/rwsem.S](https://github.com/torvalds/linux/blob/16f73eb02d7e1765ccab3d2018e0bd98eb93d973/arch/x86/lib/rwsem.S) assembly file. The `call_rwsem_down_write_failed` function just calls the `rwsem_down_write_failed` function from the [kernel/locking/rwsem-xadd.c](https://github.com/torvalds/linux/blob/16f73eb02d7e1765ccab3d2018e0bd98eb93d973/locking/rwsem-xadd.c) source code file anticipatorily save general purpose registers:
+or `0xffffffff00000001` to the `count` of the given `reader/writer semaphore` and returns previous value of it. After this we check the active mask in the `rw_semaphore->count`. If it was zero before, this means that there were no-one writer before, so we acquired a lock. In other way we call the `call_rwsem_down_write_failed` function from the [arch/x86/lib/rwsem.S](https://github.com/torvalds/linux/blob/16f73eb02d7e1765ccab3d2018e0bd98eb93d973/arch/x86/lib/rwsem.S) assembly file. The `call_rwsem_down_write_failed` function just calls the `rwsem_down_write_failed` function from the [kernel/locking/rwsem-xadd.c](https://github.com/torvalds/linux/blob/master/kernel/locking/rwsem.c) source code file anticipatorily save general purpose registers:
 
 ```assembly
 ENTRY(call_rwsem_down_write_failed)
@@ -409,7 +409,7 @@ Conclusion
 
 This is the end of the fifth part of the [synchronization primitives](https://en.wikipedia.org/wiki/Synchronization_%28computer_science%29) chapter in the Linux kernel. In this part we met with special type of `semaphore` - `readers/writer` semaphore which provides access to data for multiply process to read or for one process to writer. In the next part we will continue to dive into synchronization primitives in the Linux kernel.
 
-If you have questions or suggestions, feel free to ping me in twitter [0xAX](https://twitter.com/0xAX), drop me [email](anotherworldofworld@gmail.com) or just create [issue](https://github.com/0xAX/linux-insides/issues/new).
+If you have questions or suggestions, feel free to ping me in twitter [0xAX](https://twitter.com/0xAX), drop me [email](mailto:anotherworldofworld@gmail.com) or just create [issue](https://github.com/0xAX/linux-insides/issues/new).
 
 **Please note that English is not my first language and I am really sorry for any inconvenience. If you found any mistakes please send me PR to [linux-insides](https://github.com/0xAX/linux-insides).**
 

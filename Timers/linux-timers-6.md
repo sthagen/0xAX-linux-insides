@@ -208,7 +208,7 @@ function which just reads and returns atomic counter from the `Main Counter Regi
 ACPI PM timer
 --------------------------------------------------------------------------------
 
-The seconds clock source is [ACPI Power Management Timer](http://uefi.org/sites/default/files/resources/ACPI_5.pdf). Implementation of this clock source is located in the [drivers/clocksource/acpi_pm.c](https://github.com/torvalds/linux/blob/16f73eb02d7e1765ccab3d2018e0bd98eb93d973/drivers/clocksource_acpi_pm.c) source code file and starts from the call of the `init_acpi_pm_clocksource` function during `fs` [initcall](https://kernelnewbies.org/Documents/InitcallMechanism).
+The seconds clock source is [ACPI Power Management Timer](http://uefi.org/sites/default/files/resources/ACPI_5.pdf). Implementation of this clock source is located in the [drivers/clocksource/acpi_pm.c](https://github.com/torvalds/linux/blob/master/drivers/clocksource/acpi_pm.c) source code file and starts from the call of the `init_acpi_pm_clocksource` function during `fs` [initcall](https://kernelnewbies.org/Documents/InitcallMechanism).
 
 If we will look at implementation of the `init_acpi_pm_clocksource` function, we will see that it starts from the check of the value of `pmtmr_ioport` variable:
 
@@ -390,7 +390,7 @@ Conclusion
 
 This is the end of the sixth part of the [chapter](https://0xax.gitbook.io/linux-insides/summary/timers/) that describes timers and timer management related stuff in the Linux kernel. In the previous part got acquainted with the `clockevents` framework. In this part we continued to learn time management related stuff in the Linux kernel and saw a little about three different clock sources which are used in the [x86](https://en.wikipedia.org/wiki/X86) architecture. The next part will be last part of this [chapter](https://0xax.gitbook.io/linux-insides/summary/timers/) and we will see some user space related stuff, i.e. how some time related [system calls](https://en.wikipedia.org/wiki/System_call) implemented in the Linux kernel.
 
-If you have questions or suggestions, feel free to ping me in twitter [0xAX](https://twitter.com/0xAX), drop me [email](anotherworldofworld@gmail.com) or just create [issue](https://github.com/0xAX/linux-insides/issues/new).
+If you have questions or suggestions, feel free to ping me in twitter [0xAX](https://twitter.com/0xAX), drop me [email](mailto:anotherworldofworld@gmail.com) or just create [issue](https://github.com/0xAX/linux-insides/issues/new).
 
 **Please note that English is not my first language and I am really sorry for any inconvenience. If you found any mistakes please send me PR to [linux-insides](https://github.com/0xAX/linux-insides).**
 

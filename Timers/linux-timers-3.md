@@ -10,7 +10,7 @@ This is third part of the [chapter](https://0xax.gitbook.io/linux-insides/summar
 register_refined_jiffies(CLOCK_TICK_RATE);
 ```
 
-function which defined in the [kernel/time/jiffies.c](https://github.com/torvalds/linux/blob/16f73eb02d7e1765ccab3d2018e0bd98eb93d973/kernel/time/jiffies.c) source code file and executes initialization of the `refined_jiffies` clock source for us. Recall that this function is called from the `setup_arch` function that defined in the [https://github.com/torvalds/linux/blob/16f73eb02d7e1765ccab3d2018e0bd98eb93d973/arch/x86/kernel/setup.c](arch/x86/kernel/setup.c) source code and executes architecture-specific ([x86_64](https://en.wikipedia.org/wiki/X86-64) in our case) initialization. Look on the implementation of the `setup_arch` and you will note that the call of the `register_refined_jiffies` is the last step before the `setup_arch` function will finish its work.
+function which defined in the [kernel/time/jiffies.c](https://github.com/torvalds/linux/blob/16f73eb02d7e1765ccab3d2018e0bd98eb93d973/kernel/time/jiffies.c) source code file and executes initialization of the `refined_jiffies` clock source for us. Recall that this function is called from the `setup_arch` function that defined in the [arch/x86/kernel/setup.c](https://github.com/torvalds/linux/blob/16f73eb02d7e1765ccab3d2018e0bd98eb93d973/arch/x86/kernel/setup.c) source code and executes architecture-specific ([x86_64](https://en.wikipedia.org/wiki/X86-64) in our case) initialization. Look on the implementation of the `setup_arch` and you will note that the call of the `register_refined_jiffies` is the last step before the `setup_arch` function will finish its work.
 
 There are many different `x86_64` specific things already configured after the end of the `setup_arch` execution. For example some early [interrupt](https://en.wikipedia.org/wiki/Interrupt) handlers already able to handle interrupts, memory space reserved for the [initrd](https://en.wikipedia.org/wiki/Initrd), [DMI](https://en.wikipedia.org/wiki/Desktop_Management_Interface) scanned, the Linux kernel log buffer is already set and this means that the [printk](https://en.wikipedia.org/wiki/Printk) function is able to work, [e820](https://en.wikipedia.org/wiki/E820) parsed and the Linux kernel already knows about available memory and and many many other architecture specific things (if you are interesting, you can read more about the `setup_arch` function and Linux kernel initialization process in the second [chapter](https://0xax.gitbook.io/linux-insides/summary/initialization) of this book).
 
@@ -70,7 +70,7 @@ By default, there is the `CONFIG_HZ_PERIODIC` kernel configuration option which 
 
 The first is to omit scheduling-clock ticks on idle processors. To enable this behaviour in the Linux kernel, we need to enable the `CONFIG_NO_HZ_IDLE` kernel configuration option. This option allows Linux kernel to avoid sending timer interrupts to idle processors. In this case periodic timer interrupts will be replaced with on-demand interrupts. This mode is called - `dyntick-idle` mode. But if the kernel does not handle interrupts of a system timer, how can the kernel decide if the system has nothing to do?
 
-Whenever the idle task is selected to run, the periodic tick is disabled with the call of the `tick_nohz_idle_enter` function that defined in the [kernel/time/tick-sched.c](https://github.com/torvalds/linux/blob/16f73eb02d7e1765ccab3d2018e0bd98eb93d973/kernel/time/tich-sched.c) source code file and enabled with the call of the `tick_nohz_idle_exit` function. There is special concept in the Linux kernel which is called - `clock event devices` that are used to schedule the next interrupt. This concept provides API for devices which can deliver interrupts at a specific time in the future and represented by the `clock_event_device` structure in the Linux kernel. We will not dive into implementation of the `clock_event_device` structure now. We will see it in the next part of this chapter. But there is one interesting moment for us right now.
+Whenever the idle task is selected to run, the periodic tick is disabled with the call of the `tick_nohz_idle_enter` function that defined in the [kernel/time/tick-sched.c](https://github.com/torvalds/linux/blob/master/kernel/time/tick-sched.c) source code file and enabled with the call of the `tick_nohz_idle_exit` function. There is special concept in the Linux kernel which is called - `clock event devices` that are used to schedule the next interrupt. This concept provides API for devices which can deliver interrupts at a specific time in the future and represented by the `clock_event_device` structure in the Linux kernel. We will not dive into implementation of the `clock_event_device` structure now. We will see it in the next part of this chapter. But there is one interesting moment for us right now.
 
 The second way is to omit scheduling-clock ticks on processors that are either in `idle` state or that have only one runnable task or in other words busy processor. We can enable this feature with the `CONFIG_NO_HZ_FULL` kernel configuration option and it allows to reduce the number of timer interrupts significantly.
 
@@ -168,7 +168,7 @@ enum tick_device_mode {
 };
 ```
 
-Each `clock events` device in the system registers itself by the call of the `clockevents_register_device` function or `clockevents_config_and_register` function during initialization process of the Linux kernel. During the registration of a new `clock events` device, the Linux kernel calls the `tick_check_new_device` function that defined in the [kernel/time/tick-common.c](https://github.com/torvalds/linux/blob/16f73eb02d7e1765ccab3d2018e0bd98eb93d973/kernel/tick-common.c) source code file and checks the given `clock events` device should be used by the Linux kernel. After all checks, the `tick_check_new_device` function executes a call of the:
+Each `clock events` device in the system registers itself by the call of the `clockevents_register_device` function or `clockevents_config_and_register` function during initialization process of the Linux kernel. During the registration of a new `clock events` device, the Linux kernel calls the `tick_check_new_device` function that defined in the [kernel/time/tick-common.c](https://github.com/torvalds/linux/blob/master/kernel/time/tick-common.c) source code file and checks the given `clock events` device should be used by the Linux kernel. After all checks, the `tick_check_new_device` function executes a call of the:
 
 ```C
 tick_install_broadcast_device(newdev);
@@ -202,7 +202,7 @@ void tick_install_broadcast_device(struct clock_event_device *dev)
 }
 ```
 
-First of all we get the current `clock event` device from the `tick_broadcast_device`. The `tick_broadcast_device` defined in the [kernel/time/tick-common.c](https://github.com/torvalds/linux/blob/16f73eb02d7e1765ccab3d2018e0bd98eb93d973/kernel/tick-common.c) source code file:
+First of all we get the current `clock event` device from the `tick_broadcast_device`. The `tick_broadcast_device` defined in the [kernel/time/tick-common.c](https://github.com/torvalds/linux/blob/master/kernel/time/tick-common.c) source code file:
 
 ```C
 static struct tick_device tick_broadcast_device;
@@ -321,7 +321,7 @@ If you remember, we have started this part with the call of the `tick_init` func
 Initialization of dyntick related data structures
 --------------------------------------------------------------------------------
 
-We already saw some information about `dyntick` concept in this part and we know that this concept allows kernel to disable system timer interrupts in the `idle` state. The `tick_nohz_init` function makes initialization of the different data structures which are related to this concept. This function defined in the [kernel/time/tick-sched.c](https://github.com/torvalds/linux/blob/16f73eb02d7e1765ccab3d2018e0bd98eb93d973/kernel/time/tich-sched.c) source code file and starts from the check of the value of the `tick_nohz_full_running` variable which represents state of the tick-less mode for the `idle` state and the state when system timer interrups are disabled during a processor has only one runnable task:
+We already saw some information about `dyntick` concept in this part and we know that this concept allows kernel to disable system timer interrupts in the `idle` state. The `tick_nohz_init` function makes initialization of the different data structures which are related to this concept. This function defined in the [kernel/time/tick-sched.c](https://github.com/torvalds/linux/blob/master/kernel/time/tick-sched.c) source code file and starts from the check of the value of the `tick_nohz_full_running` variable which represents state of the tick-less mode for the `idle` state and the state when system timer interrups are disabled during a processor has only one runnable task:
 
 ```C
 if (!tick_nohz_full_running) {
@@ -418,7 +418,7 @@ This is the end of the third part of the chapter that describes timers and timer
 
 In the next part we will continue to dive into timer management related things in the Linux kernel and will see new concept for us - `timers`.
 
-If you have questions or suggestions, feel free to ping me in twitter [0xAX](https://twitter.com/0xAX), drop me [email](anotherworldofworld@gmail.com) or just create [issue](https://github.com/0xAX/linux-insides/issues/new).
+If you have questions or suggestions, feel free to ping me in twitter [0xAX](https://twitter.com/0xAX), drop me [email](mailto:anotherworldofworld@gmail.com) or just create [issue](https://github.com/0xAX/linux-insides/issues/new).
 
 **Please note that English is not my first language and I am really sorry for any inconvenience. If you found any mistakes please send me PR to [linux-insides](https://github.com/0xAX/linux-insides).**
 
