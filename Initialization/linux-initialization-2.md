@@ -115,7 +115,11 @@ Where:
 * `Offset` - is offset to entry point of an interrupt handler;
 * `DPL` -    Descriptor Privilege Level;
 * `P` -      Segment Present flag;
-* `Segment selector` - a code segment selector in GDT or LDT
+* `Segment selector` - a code segment selector in GDT or LDT (actually in linux, it must point to a valid descriptor in your GDT.)
+```C
+#define __KERNEL_CS	(GDT_ENTRY_KERNEL_CS*8) // 0000 0000 0001 0000
+#define GDT_ENTRY_KERNEL_CS 2
+```
 * `IST` -    provides ability to switch to a new stack for interrupts handling.
 
 And the last `Type` field describes type of the `IDT` entry. There are three different kinds of gates for interrupts:
@@ -164,7 +168,7 @@ where `NUM_EXCEPTION_VECTORS` expands to `32`. As we can see, We're filling only
 
 and inserts an interrupt gate to the `IDT` table which is represented by the `&idt_descr` array. 
 
-The `early_idt_handler_array` array is declaredd in the [arch/x86/include/asm/segment.h](https://github.com/torvalds/linux/blob/master/arch/x86/include/asm/segment.h) header file and contains addresses of the first `32` exception handlers:
+The `early_idt_handler_array` array is declared in the [arch/x86/include/asm/segment.h](https://github.com/torvalds/linux/blob/master/arch/x86/include/asm/segment.h) header file and contains addresses of the first `32` exception handlers:
 
 ```C
 #define EARLY_IDT_HANDLER_SIZE   9
@@ -310,6 +314,13 @@ Now let's look on the `early_idt_handler_common` implementation. It locates in t
 	incl early_recursion_flag(%rip)
 ```
 
+The `early_recursion_flag` is defined in the same assembly file as the `early_idt_handler_common` symbol as follows:
+
+```assembly
+	early_recursion_flag:
+		.long 0
+```
+
 Next we save general registers on the stack:
 
 ```assembly
@@ -332,15 +343,39 @@ Next we save general registers on the stack:
 	UNWIND_HINT_REGS
 ```
 
+Okay, now the stack contains following data:
+```
+High |-------------------------|
+     | %rflags                 |
+     | %cs                     |
+     | %rip                    |
+     | error code              |
+     | %rdi                    |
+     | %rsi                    |
+     | %rdx                    |
+     | %rax                    |
+     | %r8                     |
+     | %r9                     |
+     | %r10                    |
+     | %r11                    |
+     | %rbx                    |
+     | %rbp                    |
+     | %r12                    |
+     | %r13                    |
+     | %r14                    |
+     | %r15                    |<-- %rsp
+Low  |-------------------------|
+```
+
 We need to do it to prevent wrong values of registers when we return from the interrupt handler. After this we check the vector number, and if it is `#PF` or [Page Fault](https://en.wikipedia.org/wiki/Page_fault), we put value from the `cr2` to the `rdi` register and call `early_make_pgtable` (we'll see it soon):
 
 ```assembly
-	cmpq $14,%rsi
+	cmpq $14,%rsi            /* Page fault? */
 	jnz 10f
 	GET_CR2_INTO(%rdi)
 	call early_make_pgtable
-	andl %eax,%eax
-	jz 20f
+	andl %eax,%eax           /* It is more efficient, the opcode is shorter than movl 1, %eax, only 2 bytes. */
+	jz 20f                   /* All good */
 ```
 
 otherwise we call `early_fixup_exception` function by passing kernel stack pointer:
@@ -382,7 +417,42 @@ int __init early_make_pgtable(unsigned long address)
 }
 ```
 
-We initialize `pmd` and pass it to the `__early_make_pgtable` function along with `address`. The `__early_make_pgtable` function is defined in the same file as the `early_make_pgtable` function as the following:
+`__PAGE_OFFSET` is defined in the [arch/x86/include/asm/page_64_types.h](https://elixir.bootlin.com/linux/v3.10-rc1/source/arch/x86/include/asm/page_64_types.h#L33) header file, and the suffix `UL` forces the page offset to be a unsigned long data type.
+
+```C
+#define __PAGE_OFFSET           _AC(0xffff880000000000, UL) 
+```
+
+And the `_AC` macro is defined in the [include/uapi/linux/const.h](https://elixir.bootlin.com/linux/v3.10-rc1/source/include/uapi/linux/const.h#L16) header file: 
+
+```C
+/* Some constant macros are used in both assembler and
+ * C code.  Therefore we cannot annotate them always with
+ * 'UL' and other type specifiers unilaterally.  We
+ * use the following macros to deal with this.
+ *
+ * Similarly, _AT() will cast an expression with a type in C, but
+ * leave it unchanged in asm.
+ */
+
+#ifdef __ASSEMBLY__
+#define _AC(X,Y)	X
+#else
+#define __AC(X,Y)	(X##Y)
+#define _AC(X,Y)	__AC(X,Y)
+#endif
+```
+Where `__PAGE_OFFSET` expands to `0xffff888000000000`. But, why is it possible to translate a virtual address to a physical address by subtracting `__PAGE_OFFSET`?  The answer is in the [Documentation/x86/x86_64/mm.rst](https://elixir.bootlin.com/linux/v5.10-rc5/source/Documentation/x86/x86_64/mm.rst#L45) documentation: 
+
+```
+...
+ffff888000000000 | -119.5  TB | ffffc87fffffffff |   64 TB | direct mapping of all physical memory (page_offset_base)
+...
+```
+
+As explained above, the virtual address space `ffff888000000000-ffffc87fffffffff` is direct mapping of all physical memory. When the kernel wants to access all physical memory, it uses direct mapping.
+
+Okay, let's get back to discussing `early_make_pgtable`. We initialize `pmd` and pass it to the `__early_make_pgtable` function along with `address`. The `__early_make_pgtable` function is defined in the same file as the `early_make_pgtable` function as follows:
 
 ```C
 int __init __early_make_pgtable(unsigned long address, pmdval_t pmd)
