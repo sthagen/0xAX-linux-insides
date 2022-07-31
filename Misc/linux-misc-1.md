@@ -224,7 +224,7 @@ $ make -j4
 
 `busybox` is an executable file - `/bin/busybox` that contains a set of standard tools like [coreutils](https://en.wikipedia.org/wiki/GNU_Core_Utilities). In the `busybox` menu we need to enable: `Build BusyBox as a static binary (no shared libs)` option:
 
-![busybox menu](http://i68.tinypic.com/11933bp.png)
+![busysbox menu](https://i.imgur.com/TxPRCzQ.png)
 
 We can find this menu in the:
 
@@ -291,7 +291,7 @@ $ git checkout master
 $ git pull upstream master
 ```
 
-As soon as your local copy of the linux kernel source code is in sync with the [mainline](https://github.com/torvalds/linux) repository, we can start to apply changes to it. I already wrote, I have no advice for where you should start and what `TODO` to choose within the Linux kernel. But the best place for newbies is the `staging` tree. In other words the set of drivers from the [drivers/staging](https://github.com/torvalds/linux/tree/master/drivers/staging) directory. The maintainer of this tree is [Greg Kroah-Hartman](https://en.wikipedia.org/wiki/Greg_Kroah-Hartman) and the `staging` drivers are a good target for trivial patch fixes. Let's look at this simple example, that describes how to generate a patch, check it and send it to the [Linux kernel mail listing](https://lkml.org/).
+As soon as your local copy of the Linux kernel source code is in sync with the [mainline](https://github.com/torvalds/linux) repository, we can start to apply changes to it. I already wrote, I have no advice for where you should start and what `TODO` to choose within the Linux kernel. But the best place for newbies is the `staging` tree. In other words the set of drivers from the [drivers/staging](https://github.com/torvalds/linux/tree/master/drivers/staging) directory. The maintainer of this tree is [Greg Kroah-Hartman](https://en.wikipedia.org/wiki/Greg_Kroah-Hartman) and the `staging` drivers are a good target for trivial patch fixes. Let's look at this simple example, that describes how to generate a patch, check it and send it to the [Linux kernel mail listing](https://lkml.org/).
 
 If we look in the driver for the [Digi International EPCA PCI](https://github.com/torvalds/linux/tree/master/drivers/staging/dgap) based devices, we will see the `dgap_sindex` function on line 295:
 
