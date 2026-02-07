@@ -293,7 +293,39 @@ static void init_heap(void)
 }
 ```
 
-First of all, `init_heap` checks the `CAN_USE_HEAP` flag from the kernel setup header. If it is not set, we'll see the warning message. If heap is enabled, the last address of it is set to the `boot_params.hdr.heap_end_ptr` filled by bootloader plus 512 bytes or to the end of the stack if the value specified by bootloader is above it. The beginning of the heap is right after the end of the `.bss` area. The stack size is 1024 bytes. Thereby, the memory map will look like:
+First of all, `init_heap` checks the `CAN_USE_HEAP` flag from the kernel setup header. We can find information about this flag in the kernel boot protocol:
+
+>   Bit 7 (write): CAN_USE_HEAP
+>
+>	Set this bit to 1 to indicate that the value entered in the
+>	heap_end_ptr is valid.  If this field is clear, some setup code
+>	functionality will be disabled.
+
+If this bit is not set, we'll see the warning message. Otherwise, the heap memory area is initialized. The beginning of the heap is defined by the `HEAP` pointer, which points to the end of the kernel setup image:
+
+```C
+char *HEAP = _end;
+```
+
+Now we need to initialize the size of the heap. There is another small hint in the Linux kernel boot protocol:
+
+> ============	==================
+> Field name:	heap_end_ptr
+> Type:		write (obligatory)
+> Offset/size:	0x224/2
+> Protocol:	2.01+
+> ============	==================
+>
+>  Set this field to the offset (from the beginning of the real-mode
+>  code) of the end of the setup stack/heap, minus 0x0200.
+
+The GRUB bootloader sets this value to:
+
+```C
+#define GRUB_LINUX_HEAP_END_OFFSET	(0x9000 - 0x200)
+```
+
+Based on these values, the end of the heap pointed by the `heap_end` will be at the `0x9000` offset from the end of the kernel setup image. To avoid the case when the heap and stack overlap, there is an additional check. It sets the end of the heap equal to the end of the stack if the first one is greater than the second. Having this, the heap memory area will be located above the `bss` area till the stack. So, the memory map will look like:
 
 ![early-heap](./images/early-heap.svg)
 
@@ -359,9 +391,24 @@ Let's look at the crucial part of the implementation of the `detect_memory_e820`
 - `di` register contain the address of the buffer which will contain memory data
 - `edx` register contains the `SMAP` magic number
 
-After registers filled with the needed values, the kernel can ask the `0xE820` BIOS interface about available memory. The kernel does it by the invoking `0x15` [BIOS interrupt](https://en.wikipedia.org/wiki/BIOS_interrupt_call) which returns information about one memory region. The kernel repeats this operation in the loop until information about all the memory regions is not collected.
+After registers are filled with the needed values, the kernel can ask the `0xE820` BIOS interface about the available memory. To do so, the kernel invokes `0x15` [BIOS interrupt](https://en.wikipedia.org/wiki/BIOS_interrupt_call), which returns information about one memory region. The kernel repeats this operation in a loop until it collects information about all available memory regions into the array of `boot_e820_entry` structures. This structure contains information about:
 
-After the information is called, the kernel print message about the available memory regions. You can find it in the [dmesg](https://en.wikipedia.org/wiki/Dmesg) output:
+- beginning address of the memory region
+- size of the memory region
+- type of the memory region
+
+The structure is defined in [arch/x86/include/uapi/asm/setup_data.h](https://github.com/torvalds/linux/blob/master/arch/x86/include/uapi/asm/setup_data.h):
+
+<!-- https://raw.githubusercontent.com/torvalds/linux/refs/heads/master/arch/x86/include/uapi/asm/setup_data.h#L45-L49 -->
+```C
+struct boot_e820_entry {
+	__u64 addr;
+	__u64 size;
+	__u32 type;
+} __attribute__((packed));
+```
+
+After the information is called, the kernel prints a message about the available memory regions. You can find it in the [dmesg](https://en.wikipedia.org/wiki/Dmesg) output:
 
 ```
 [    0.000000] e820: BIOS-provided physical RAM map:
@@ -398,6 +445,8 @@ This function performs two tasks using [BIOS interrupt](https://en.wikipedia.org
 
 1. Gets the state of a keyboard which contains information about state of certain modifier keys, like for example Caps Lock active or not.
 2. Sets the keyboard repeat rate which determines how long a key must hold down before it begins repeating
+
+After the BIOS interrupt was executed, the keyboard should be initialized. If you are wondering why we need a working keyboard at such an early stage, the answer is - it can be used during the selection of the video mode. We will see more details in the [next chapter](linux-bootstrap-3.md).
 
 ### Gathering system information
 
