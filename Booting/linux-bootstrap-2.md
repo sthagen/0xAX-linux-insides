@@ -497,4 +497,5 @@ Here is the list of the links that you may find useful during reading of this ch
 - [BIOS interrupt](https://en.wikipedia.org/wiki/BIOS_interrupt_call)
 - [Intel SpeedStep](http://en.wikipedia.org/wiki/SpeedStep)
 - [APM](https://en.wikipedia.org/wiki/Advanced_Power_Management)
-- [EDD specification](http://www.t13.org/documents/UploadedDocuments/docs2004/d1572r3-EDD3.pdf)
+- [EDD](https://en.wikipedia.org/wiki/Enhanced_Disk_Drive)
+- [Previous part](linux-bootstrap-1.md)

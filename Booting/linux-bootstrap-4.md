@@ -185,7 +185,7 @@ SYM_FUNC_START(startup_32)
 	cli
 ```
 
-When the direction flag is clear, all string or copy-like operations used for copying data, like for example [stos](http://x86.renejeschke.de/html/file_module_x86_id_306.html) or [scas](http://x86.renejeschke.de/html/file_module_x86_id_287.html), will increment the index registers `esi` or `edi`. We need to clear the direction flag because later we will use string operations for tasks such as clearing space for page tables or copying data.
+When the direction flag is clear, all string or copy-like operations used for copying data, like for example [stos](https://www.felixcloutier.com/x86/stos:stosb:stosw:stosd:stosq) or [scas](https://www.felixcloutier.com/x86/scas:scasb:scasw:scasd), will increment the index registers `esi` or `edi`. We need to clear the direction flag because later we will use string operations for tasks such as clearing space for page tables or copying data.
 
 The next instruction is to disable interrupts - `cli`. We have already seen it in the previous chapter. The interrupts are disabled "twice" because modern bootloaders can load the kernel starting from this point, but not only one that we have seen in the [first chapter](./linux-bootstrap-1.md).
 
@@ -676,4 +676,4 @@ Here is the list of the links that you may find useful during reading of this ch
 - [Physical addresses](https://en.wikipedia.org/wiki/Physical_address)
 - [Model specific registers](http://en.wikipedia.org/wiki/Model-specific_register)
 - [Control registers](https://en.wikipedia.org/wiki/Control_register)
-- [Previous part](https://github.com/0xAX/linux-insides/blob/v4.16/Booting/linux-bootstrap-3.md)
+- [Previous part](linux-bootstrap-3.md)

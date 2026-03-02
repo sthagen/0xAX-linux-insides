@@ -76,7 +76,7 @@ In real mode, the base address is normally formed by shifting the 16-bit segment
 '0xfffffff0'
 ```
 
-We got `0xFFFFFFF0`, which is 16 bytes below 4GB. This is the very first address where the CPU starts the execution after reset. This address has special name - [reset vector](https://en.wikipedia.org/wiki/Reset_vector). It is the memory location at which the CPU expects to find the first instruction to execute after reset. Usually it contains a [jump](https://en.wikipedia.org/wiki/JMP_%28x86_instruction%29) (`jmp`) instruction which points to the [BIOS](https://en.wikipedia.org/wiki/BIOS) or [UEFI](https://en.wikipedia.org/wiki/UEFI) entry point. For example, if we take a look at the [source code](https://github.com/coreboot/coreboot/blob/main/src/cpu/x86/reset16.S) of the [coreboot](https://www.coreboot.org/), we will see it there:
+We got `0xFFFFFFF0`, which is 16 bytes below 4GB. This is the very first address where the CPU starts the execution after reset. This address has special name - [reset vector](https://en.wikipedia.org/wiki/Reset_vector). It is the memory location at which the CPU expects to find the first instruction to execute after reset. Usually it contains a [jump](https://en.wikipedia.org/wiki/JMP_%28x86_instruction%29) (`jmp`) instruction which points to the [BIOS](https://en.wikipedia.org/wiki/BIOS) or [UEFI](https://en.wikipedia.org/wiki/UEFI) entry point. For example, if we take a look at the [source code](https://github.com/coreboot/coreboot/blob/main/src/cpu/x86/entry16.S) of the [coreboot](https://www.coreboot.org/), we will see it there:
 
 <!-- https://raw.githubusercontent.com/coreboot/coreboot/refs/heads/main/src/cpu/x86/entry16.S#L155-L159 -->
 ```assembly
@@ -180,7 +180,7 @@ From this point onwards, the BIOS hands control over to the bootloader.
 
 ## The Bootloader Stage
 
-There are a number of different bootloaders that can boot Linux kernel, such as [GRUB 2](https://www.gnu.org/software/grub/), [syslinux](http://www.syslinux.org/wiki/index.php/The_Syslinux_Project), [systemd-boot](https://www.freedesktop.org/wiki/Software/systemd/systemd-boot/), and others. The Linux kernel has a [Boot protocol](https://github.com/torvalds/linux/blob/master/Documentation/arch/x86/boot.rst) which specifies the requirements for a bootloader to implement Linux support. In this chapter, we will take a short look how GRUB 2 does loading.
+There are a number of different bootloaders that can boot Linux kernel, such as [GRUB 2](https://www.gnu.org/software/grub/), [syslinux](http://www.syslinux.org/wiki/index.php/The_Syslinux_Project), [systemd-boot](https://github.com/ivandavidov/systemd-boot), and others. The Linux kernel has a [Boot protocol](https://github.com/torvalds/linux/blob/master/Documentation/arch/x86/boot.rst) which specifies the requirements for a bootloader to implement Linux support. In this chapter, we will take a short look how GRUB 2 does loading.
 
 Continuing from where we left off - the BIOS has now selected a boot device, found its boot sector, loaded it into memory and passed control to the code located there. GRUB 2 bootloader consists of multiple [stages](https://www.gnu.org/software/grub/manual/grub/grub.html#Images). The first stage of the boot code is in the [boot.S](https://github.com/rhboot/grub2/blob/master/grub-core/boot/i386/pc/boot.S) source code file. Due to limited amount of space for the first boot sector, this code has only single goal - to load [core image](https://www.gnu.org/software/grub/manual/grub/html_node/Images.html) into memory and jump to it.
 
