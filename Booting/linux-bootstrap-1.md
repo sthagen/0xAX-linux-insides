@@ -1,33 +1,33 @@
-# Kernel Booting Process — Part 1
+# Kernel Booting Process - Part 1
 
-If you’ve read my earlier [posts](https://github.com/0xAX/asm) about [assembly language](https://en.wikipedia.org/wiki/Assembly_language) for Linux x86_64, you might see that I started to get interested in low-level programming. I’ve written a set of articles on assembly programming for [x86_64](https://en.wikipedia.org/wiki/X86-64) Linux and, in parallel, began exploring the Linux kernel source code. I’ve always been fascinated by what happens under the hood — how programs execute on a CPU, how they’re laid out in memory, how the kernel schedules processes and manages resources, how the network stack operates at a low level, and many other details. This series is a way of sharing my journey.
+If you've read my earlier [posts](https://github.com/0xAX/asm) about [assembly language](https://en.wikipedia.org/wiki/Assembly_language) for Linux x86_64, you might see that I started to get interested in low-level programming. I've written a set of articles on assembly programming for [x86_64](https://en.wikipedia.org/wiki/X86-64) Linux and, in parallel, began exploring the Linux kernel source code. I've always been fascinated by what happens under the hood - how programs execute on a CPU, how they're laid out in memory, how the kernel schedules processes and manages resources, how the network stack operates at a low level, and many other details. This series is a way of sharing my journey.
 
 > [!NOTE]
-> This is not official Linux kernel documentation, it is a learning project. I’m not a professional Linux kernel developer, and I don’t write kernel code as part of my daily job. Learning how the Linux kernel works is just my hobby. If you find anything unclear, spot an error, or have questions or suggestions, feel free to reach out - you always can ping me on X [0xAX](https://twitter.com/0xAX), send me an [email](mailto:anotherworldofworld@gmail.com) or open a new [issue](https://github.com/0xAX/linux-insides/issues/new). Your feedback is always welcome and appreciated.
+> This is not official Linux kernel documentation, it is a learning project. I'm not a professional Linux kernel developer, and I don't write kernel code as part of my daily job. Learning how the Linux kernel works is just my hobby. If you find anything unclear, spot an error, or have questions or suggestions, feel free to reach out - you always can ping me on X [0xAX](https://twitter.com/0xAX), send me an [email](mailto:anotherworldofworld@gmail.com) or open a new [issue](https://github.com/0xAX/linux-insides/issues/new). Your feedback is always welcome and appreciated.
 
 The main goal of this series is to provide a guide to the Linux kernel for readers who want to begin learning how it works. We will explore not only what the kernel does, but will try to understand how and why it does it. Despite being considered to be understandable for anyone who is interested in Linux kernel, it is highly recommended to have some prior knowledge before starting to read these notes. If you want to experiment with the kernel code, first of all it is best to have a [Linux distribution](https://en.wikipedia.org/wiki/Linux_distribution) installed. Besides that, on these pages we will see much of [C](https://en.wikipedia.org/wiki/C_(programming_language)) and [assembly](https://en.wikipedia.org/wiki/Assembly_language) code, so the good understanding of these programming languages is highly required.
 
 > [!IMPORTANT]
-> I started writing this series when the latest version of the kernel was `3.18`. A lot has changed since then, and I am in the process of updating the content to reflect modern kernels where possible — now focusing on v6.16+. I’ll continue revising the posts as the kernel evolves.
+> I started writing this series when the latest version of the kernel was `3.18`. A lot has changed since then, and I am in the process of updating the content to reflect modern kernels where possible - now focusing on v6.16+. I'll continue revising the posts as the kernel evolves.
 
-That’s enough introduction — let’s dive into the Linux kernel!
+That's enough introduction - let's dive into the Linux kernel!
 
 ## The Magic Power Button - What happens next?
 
-Although this is a series of posts about Linux kernel, we will not jump straight into kernel code. First, let’s step back and look at what happens before the kernel even comes into play. Everything starts from the turning on a computer. And we will start from this point as well.
+Although this is a series of posts about Linux kernel, we will not jump straight into kernel code. First, let's step back and look at what happens before the kernel even comes into play. Everything starts from the turning on a computer. And we will start from this point as well.
 
 When you press the "magic" power button on your laptop or desktop computer, the [motherboard](https://en.wikipedia.org/wiki/Motherboard) sends a signal to the [power supply](https://en.wikipedia.org/wiki/Power_supply). In response, the power supply delivers the proper amount of electricity to other components of the computer. Once the motherboard receives the [power good signal](https://en.wikipedia.org/wiki/Power_good_signal), it triggers the CPU to start. The CPU then performs a reset: it clears any leftover data in its registers and loads predefined values into each of them, preparing for the very first instructions of the boot process.
 
-Each **x86_64** processor begins execution in a special mode called [real mode](https://en.wikipedia.org/wiki/Real_mode). This mode exists for historical reasons - to be compatible with the earliest processors. Real mode is supported on all x86-compatible processors — from the original [8086](https://en.wikipedia.org/wiki/Intel_8086) to today’s modern 64-bit CPUs.
+Each **x86_64** processor begins execution in a special mode called [real mode](https://en.wikipedia.org/wiki/Real_mode). This mode exists for historical reasons - to be compatible with the earliest processors. Real mode is supported on all x86-compatible processors - from the original [8086](https://en.wikipedia.org/wiki/Intel_8086) to today's modern 64-bit CPUs.
 
-The **8086** was a 16-bit microprocessor. Basically it means that its general-purpose registers and instruction pointer were `16` bits wide. However, the chip was designed with a `20-bit` physical memory address bus — the set of electrical lines used to select memory locations. With `20` address lines, the CPU can form addresses from `0x00000` to `0xFFFFF`, giving access to exactly `1 MB` of physical memory or `2^20` bytes.
+The **8086** was a 16-bit microprocessor. Basically it means that its general-purpose registers and instruction pointer were `16` bits wide. However, the chip was designed with a `20-bit` physical memory address bus - the set of electrical lines used to select memory locations. With `20` address lines, the CPU can form addresses from `0x00000` to `0xFFFFF`, giving access to exactly `1 MB` of physical memory or `2^20` bytes.
 
 Because the registers on **8086** processors were only `16` bits wide, the largest value they could hold was `0xFFFF` which equals 64 KB. This means that, using just a single 16-bit value, the CPU could only directly address 64 KB of memory at a time. This leads us to the question - how can a processor with 16-bit registers access 20-bit addresses? The answer is [memory segmentation](https://en.wikipedia.org/wiki/Memory_segmentation).
 
 To make use of the entire 1 MB space provided by the 20-bit address bus, the **8086** used a scheme called [memory segmentation](https://en.wikipedia.org/wiki/Memory_segmentation). All memory is divided into small, fixed-size segments of `65_536` bytes each. Instead of using just one value to identify a memory location, a CPU uses the two:
 
-1. Segment selector — identifies the starting point (base address) of a 64 KB segment. Represented by the value of the `cs` (code-segment) register.
-2. Offset — specifies how far into that segment the target address is. Represented by the value of the `ip` register.
+1. Segment selector - identifies the starting point (base address) of a 64 KB segment. Represented by the value of the `cs` (code-segment) register.
+2. Offset - specifies how far into that segment the target address is. Represented by the value of the `ip` register.
 
 In real mode, the base address for a given segment selector is calculated as:
 
@@ -57,7 +57,7 @@ If we take the largest possible values for the segment selector and the offset -
 
 This gives us the address `0x10FFEF`, which is `65_520` bytes past the 1 MB boundary. Since, in real mode on the original **8086** CPU, the CPU could only access the first 1 MB of memory, any address above `0xFFFFF` would wrap around back to the beginning of the address space. On modern **386+** CPUs the physical bus is wider even in real mode, but the address computation still based on the `segment:offset`.
 
-Now that we understand the basics of real mode and its memory addressing limitations, let’s return to the state after a hardware reset.
+Now that we understand the basics of real mode and its memory addressing limitations, let's return to the state after a hardware reset.
 
 ## First code executed after reset
 
@@ -108,7 +108,7 @@ When the CPU wakes up, it reads the jump at the `0xFFFFFFF0` address, jump into 
 
 We stopped at the point when a CPU jumps from the reset vector to the firmware. On a legacy PC, that means the BIOS. On modern computers it is UEFI. In the next chapters we will see the booting processes on a legacy PC using the BIOS, and later UEFI.
 
-The first job of BIOS is to bring the system into a working state. It runs a series of hardware checks and initializations — memory tests, peripheral setup, chipset configuration — all part of the [POST](https://en.wikipedia.org/wiki/Power-on_self-test) routine. Once everything is checked, the next step is to find an operating system to boot. The BIOS doesn’t pick just a random disk. It follows a boot order, a list stored in its configuration.
+The first job of BIOS is to bring the system into a working state. It runs a series of hardware checks and initializations - memory tests, peripheral setup, chipset configuration - all part of the [POST](https://en.wikipedia.org/wiki/Power-on_self-test) routine. Once everything is checked, the next step is to find an operating system to boot. The BIOS doesn't pick just a random disk. It follows a boot order, a list stored in its configuration.
 
 When the BIOS tries to boot from a hard drive, it looks for a [boot sector](https://en.wikipedia.org/wiki/Boot_sector). On hard drives partitioned with an [MBR partition layout](https://en.wikipedia.org/wiki/Master_boot_record), the boot sector is stored in the first `446` bytes of the first sector, where each sector is `512` bytes. The final two bytes of the first sector must be `0x55` and `0xAA`. These two last bytes says to BIOS somewhat like "yes - this device is bootable". Once the BIOS finds the valid boot sector, it copies it into the fixed memory location at `0x7C00`, jumps to there and start executing it.
 
@@ -187,7 +187,7 @@ Continuing from where we left off - the BIOS has now selected a boot device, fou
 The core image starts with [diskboot.S](https://github.com/rhboot/grub2/blob/master/grub-core/boot/i386/pc/diskboot.S), which is usually stored right after the first sector of the disk. The code from the `diskboot.S` file loads the rest of the core image into memory. The core image contains the code of the loader itself and drivers for reading different filesystems. After the whole core image is loaded into memory, the execution continues from the [grub_main](https://github.com/rhboot/grub2/blob/master/grub-core/kern/main.c) function. This is where GRUB sets up the environment it needs to operate:
 
 - Initializes the console so messages and menus can be displayed.
-- Sets the root device — the disk from which GRUB will read files modules and configuration files.
+- Sets the root device - the disk from which GRUB will read files modules and configuration files.
 - Loads and parses the GRUB configuration file.
 - Loads required modules.
 
@@ -246,7 +246,7 @@ X             +------------------------+
 ... where the address X is as low as the design of the boot loader permits.
 ```
 
-We can see that when the bootloader transfers control to the kernel, execution starts right after the kernel’s boot sector — that is, at the address `X` plus the length of the boot sector. The value of this `X` depends on how the kernel loaded. For example if I try to load kernel just with [qemu](https://www.qemu.org/), the starting address of the kernel image is at `0x10000`:
+We can see that when the bootloader transfers control to the kernel, execution starts right after the kernel's boot sector - that is, at the address `X` plus the length of the boot sector. The value of this `X` depends on how the kernel loaded. For example if I try to load kernel just with [qemu](https://www.qemu.org/), the starting address of the kernel image is at `0x10000`:
 
 ```bash
 hexdump -C /tmp/dump | grep MZ
@@ -264,7 +264,7 @@ Linux kernel image starts from `4D 5A` bytes as you may see in the beginning of 
 	.word	IMAGE_DOS_SIGNATURE
 ```
 
-If you want to get a similar memory dump, follow these steps. First of all, you need to build kernel. If you do not know how to do it, you can find detailed instruction [here](https://github.com/0xAX/linux-insides/blob/master/Misc/linux-misc-1.md). On the diagram above, we can see that the `Protected-mode` kernel starts from `0x100000`. Knowing this address we can start the kernel in the qemu virtual machine with the following command:
+If you want to get a similar memory dump, follow these steps. First of all, you need to build kernel. If you do not know how to do it, you can find detailed instruction [here](https://github.com/0xAX/linux-insides/blob/master/Contributing/linux-contributing-1.md). On the diagram above, we can see that the `Protected-mode` kernel starts from `0x100000`. Knowing this address we can start the kernel in the qemu virtual machine with the following command:
 
 ```bash
 sudo qemu-system-x86_64 -kernel ./linux/arch/x86/boot/bzImage \
@@ -442,7 +442,7 @@ The very first instruction we encounter here is [jmp](https://en.wikipedia.org/w
 
 > The target operand specifies either an absolute offset (that is an offset from the base of the code segment) or a relative offset (a signed displacement relative to the current value of the instruction pointer in the EIP register).
 
-If you’ve never met the `Nf` syntax before, `1f` means the next label `1` that will appear in the code. Immediately after those two bytes, we can see the label `1` located right before the beginning of the second part of the kernel setup header.
+If you've never met the `Nf` syntax before, `1f` means the next label `1` that will appear in the code. Immediately after those two bytes, we can see the label `1` located right before the beginning of the second part of the kernel setup header.
 
 After the second part of the kernel setup header, we can see the `.entrytext` section, which starts with the `start_of_setup` label. This is exactly the place where the execution will be continued:
 
@@ -468,7 +468,7 @@ state.cs = segment + 0x20;
 state.ip = 0;
 ```
 
-Here, `grub_linux_real_target` is the physical address where the kernel setup code will be loaded. As we saw in the [previous section](#the-magic-power-button---what-happens-next), this address was `0x90000`. Shifting it right by four divides it by `16`, converting a physical address into a segment value - that’s how real mode memory segmentation works.
+Here, `grub_linux_real_target` is the physical address where the kernel setup code will be loaded. As we saw in the [previous section](#the-magic-power-button---what-happens-next), this address was `0x90000`. Shifting it right by four divides it by `16`, converting a physical address into a segment value - that's how real mode memory segmentation works.
 
 Then, GRUB sets the code segment specified by the `CS` register to `segment + 0x20` before starting execution. Why `0x20`? Let's remember that in real mode, physical addresses are computed as:
 
@@ -491,7 +491,7 @@ After the jump to the `start_of_setup` label, the kernel setup code enters the v
 - Clearing the `.bss` section
 - Transitioning into C code
 
-In the next sections, we’ll walk through each of these steps in detail.
+In the next sections, we'll walk through each of these steps in detail.
 
 ### Aligning the segment registers
 
@@ -575,7 +575,32 @@ The first is the signature checking:
 
 This simply compares the [setup_sig](https://github.com/torvalds/linux/blob/master/arch/x86/boot/setup.ld) constant value placed by the linker with the magic number `0x5A5AAA55`. If they are not equal, the setup code reports a fatal error and stops execution. The main goal of this check is to ensure we are actually running a valid Linux kernel setup binary, loaded into the proper place by the bootloader.
 
-With the magic number confirmed, and knowing our segment registers and stack are already in the proper state, the only initialization left is to clear the `.bss` section. The section of memory is used to store statically allocated, uninitialized data. Let's take a look at the initialization of this memory area:
+With the magic number confirmed, and knowing our segment registers and stack are already in the proper state, the only initialization left is to clear the `.bss` section. This section of memory is used to store statically allocated, uninitialized data. It must be zeroed before transferring control to the kernel's higher-level initialization code.
+
+There is no guarantee that this region of memory is zeroed at the time the kernel setup header is loaded into memory. The kernel setup image also cannot guarantee that this area is initially filled with zeroes, because the `.bss` area can extend beyond the memory region where the kernel setup code is loaded. You can verify it by calculating the size of the kernel setup code and comparing it with the `__bss_start` and `__bss_end` symbol addresses. The size of the kernel setup code can be determined by the `setup_sects` field from the kernel setup header:
+
+> | Field           | Value         |
+> | --------------- | ------------- |
+> | **Field name**  | `setup_sects` |
+> | **Type**        | Read          |
+> | **Offset/size** | `0x1f1/1`     |
+> | **Protocol**    | All           |
+>
+> The size of the setup code, expressed in 512-byte sectors. If this field is `0`, the actual value is `4`.
+>
+> The real-mode code consists of the boot sector, which is always one 512-byte sector, followed by the setup code.
+
+In my build, this field has the value `31`, so the size of the whole real-mode part of the kernel is `(31 + 1) * 512 = 0x4000`. Looking at the `__bss_end` and `__bss_start` symbols, we can see that this area extends beyond `0x4000`:
+
+```bash
+readelf -a arch/x86/boot/setup.elf | grep "bss"
+  [12] .bss              NOBITS          00003e60 004e5c 001380 00  WA  0   0 32
+   00     .bstext .header .entrytext .inittext .initdata .text .text32 .rodata .videocards .data .signature .bss
+   145: 000051e0     0 NOTYPE  GLOBAL DEFAULT   12 __bss_end
+   169: 00003e60     0 NOTYPE  GLOBAL DEFAULT   12 __bss_start
+```
+
+Since we know what the `.bss` is and why the kernel setup code should fill it with zeroes, let's take a look at the initialization of this memory area:
 
 <!-- https://raw.githubusercontent.com/torvalds/linux/refs/heads/master/arch/x86/boot/header.S#L592-L597 -->
 ```assembly
