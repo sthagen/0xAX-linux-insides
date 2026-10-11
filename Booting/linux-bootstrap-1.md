@@ -193,7 +193,7 @@ The core image starts with [diskboot.S](https://github.com/rhboot/grub2/blob/mas
 
 Once these tasks are complete, we may see the familiar GRUB menu where we can choose the operating system we want to load. When we select one of the menu entries, GRUB executes the [boot](https://www.gnu.org/software/grub/manual/grub/grub.html#boot) command which boots the selected operating system. So how the loader loads the Linux kernel? To answer on this question, we need to get back to the Linux kernel boot protocol.
 
-As we can read in the [documentation](https://github.com/torvalds/linux/blob/master/Documentation/arch/x86/boot.rst), the bootloader must load the kernel into memory, fill some fields in the kernel setup header and pass control to the kernel code. The very first part of the kernel code is so-called kernel setup header and setup code. The kernel setup header is a special structure embedded in the early Linux boot code and provides fields that describes how kernel should be loaded and started. The setup header is started at the `0x01F1` offset from the beginning of the kernel image. We may look at the boot [linker script](https://github.com/torvalds/linux/blob/master/arch/x86/boot/setup.ld) to confirm the value of this offset:
+As we can read in the [documentation](https://github.com/torvalds/linux/blob/master/Documentation/arch/x86/boot.rst), the bootloader must load the kernel into memory, fill some fields in the kernel setup header and pass control to the kernel code. The kernel image begins with a legacy boot sector, followed by the real-mode setup code. This early part of the image contains a special structure called the kernel setup header. It is located at the `0x01F1` offset from the beginning of the kernel image and contains fields that describe how the kernel should be loaded and started. We may look at the boot [linker script](https://github.com/torvalds/linux/blob/master/arch/x86/boot/setup.ld) to confirm the value of this offset:
 
 <!-- https://raw.githubusercontent.com/torvalds/linux/refs/heads/master/arch/x86/boot/setup.ld#L70-70 -->
 ```linker-script
@@ -602,10 +602,10 @@ In my build, this field has the value `31`, so the size of the whole real-mode p
 
 ```bash
 readelf -a arch/x86/boot/setup.elf | grep "bss"
-  [12] .bss              NOBITS          00003e60 004e5c 001380 00  WA  0   0 32
+  [12] .bss              NOBITS          00003f00 004efc 001380 00  WA  0   0 32
    00     .bstext .header .entrytext .inittext .initdata .text .text32 .rodata .videocards .data .signature .bss
-   145: 000051e0     0 NOTYPE  GLOBAL DEFAULT   12 __bss_end
-   169: 00003e60     0 NOTYPE  GLOBAL DEFAULT   12 __bss_start
+   145: 00005280     0 NOTYPE  GLOBAL DEFAULT   12 __bss_end
+   169: 00003f00     0 NOTYPE  GLOBAL DEFAULT   12 __bss_start
 ```
 
 Since we know what the `.bss` is and why the kernel setup code should fill it with zeroes, let's take a look at the initialization of this memory area:

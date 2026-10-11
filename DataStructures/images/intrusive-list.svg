@@ -13,7 +13,8 @@
     .div  { stroke: #000000; stroke-width: 1;
             stroke: light-dark(#000000, #ffffff); }
     .dot  { fill: #000000; fill: light-dark(#000000, #ffffff); }
-    .ah   { fill: #000000; fill: light-dark(#000000, #ffffff); }
+    .ah   { fill: #000000; stroke: #000000; stroke-width: 1;
+            fill: light-dark(#000000, #ffffff); stroke: light-dark(#000000, #ffffff); }
     .ttl  { fill: #000000; font-size: 12px; text-anchor: middle; font-family: monospace;
             fill: light-dark(#000000, #ffffff); }
     .val  { fill: #000000; font-size: 12px; text-anchor: middle;
@@ -42,12 +43,13 @@
     @media (prefers-reduced-motion: reduce) {
       .cursor { animation: none; opacity: 0; }
     }
+    .mono { font-family: monospace; }
   </style>
 
   <defs>
-    <marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="3"
-            orient="auto" markerUnits="strokeWidth">
-      <path class="ah" d="M0,0 L7,3 L0,6 z"/>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="7" refY="3.5"
+            orient="auto" markerUnits="userSpaceOnUse" overflow="visible">
+      <path class="ah" d="M7,3.5 L0,0 L1.75,3.5 L0,7 z"/>
     </marker>
   </defs>
 
@@ -61,8 +63,8 @@
   <text class="val"  x="155" y="114">data fields</text>
   <rect class="node" x="85" y="140" width="140" height="44"/>
   <line class="div"  x1="155" y1="140" x2="155" y2="184"/>
-  <text class="lbl"  x="120" y="166">prev</text>
-  <text class="lbl"  x="190" y="166">next</text>
+  <text class="lbl mono"  x="120" y="166">prev</text>
+  <text class="lbl mono"  x="190" y="166">next</text>
 
   <!-- ===== container 2 ===== -->
   <rect class="box"  x="320" y="60" width="170" height="136"/>
@@ -71,8 +73,8 @@
   <text class="val"  x="405" y="114">data fields</text>
   <rect class="node" x="335" y="140" width="140" height="44"/>
   <line class="div"  x1="405" y1="140" x2="405" y2="184"/>
-  <text class="lbl"  x="370" y="166">prev</text>
-  <text class="lbl"  x="440" y="166">next</text>
+  <text class="lbl mono"  x="370" y="166">prev</text>
+  <text class="lbl mono"  x="440" y="166">next</text>
 
   <!-- ===== container 3 ===== -->
   <rect class="box"  x="570" y="60" width="170" height="136"/>
@@ -81,8 +83,8 @@
   <text class="val"  x="655" y="114">data fields</text>
   <rect class="node" x="585" y="140" width="140" height="44"/>
   <line class="div"  x1="655" y1="140" x2="655" y2="184"/>
-  <text class="lbl"  x="620" y="166">prev</text>
-  <text class="lbl"  x="690" y="166">next</text>
+  <text class="lbl mono"  x="620" y="166">prev</text>
+  <text class="lbl mono"  x="690" y="166">next</text>
 
   <!-- ===== next links: leave the right border 8px above the node centre ===== -->
   <line class="div" x1="225" y1="154" x2="335" y2="154" marker-end="url(#arrow)"/>

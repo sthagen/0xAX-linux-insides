@@ -12,7 +12,8 @@
             fill: light-dark(#fdf6e3, #201a0a); stroke: light-dark(#000000, #ffffff); }
     .div  { stroke: #000000; stroke-width: 1;
             stroke: light-dark(#000000, #ffffff); }
-    .ah   { fill: #000000; fill: light-dark(#000000, #ffffff); }
+    .ah   { fill: #000000; stroke: #000000; stroke-width: 1;
+            fill: light-dark(#000000, #ffffff); stroke: light-dark(#000000, #ffffff); }
     .ttl  { fill: #000000; font-size: 12px; text-anchor: middle; font-family: monospace;
             fill: light-dark(#000000, #ffffff); }
     .mem  { fill: #000000; font-size: 11px; text-anchor: middle; font-family: monospace;
@@ -43,12 +44,13 @@
     @media (prefers-reduced-motion: reduce) {
       .cursor { animation: none; opacity: 0; }
     }
+    .mono { font-family: monospace; }
   </style>
 
   <defs>
-    <marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="3"
-            orient="auto" markerUnits="strokeWidth">
-      <path class="ah" d="M0,0 L7,3 L0,6 z"/>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="7" refY="3.5"
+            orient="auto" markerUnits="userSpaceOnUse" overflow="visible">
+      <path class="ah" d="M7,3.5 L0,0 L1.75,3.5 L0,7 z"/>
     </marker>
   </defs>
 
@@ -64,8 +66,8 @@
   <text class="mem"  x="145" y="124">tasks</text>
   <line class="div"  x1="65" y1="130" x2="225" y2="130"/>
   <line class="div"  x1="145" y1="130" x2="145" y2="166"/>
-  <text class="lbl"  x="105" y="152">prev</text>
-  <text class="lbl"  x="185" y="152">next</text>
+  <text class="lbl mono"  x="105" y="152">prev</text>
+  <text class="lbl mono"  x="185" y="152">next</text>
   <rect class="hi"   x="65" y="172" width="160" height="26"/>
   <text class="val"  x="145" y="189">other fields</text>
 
@@ -78,8 +80,8 @@
   <text class="mem"  x="395" y="124">tasks</text>
   <line class="div"  x1="315" y1="130" x2="475" y2="130"/>
   <line class="div"  x1="395" y1="130" x2="395" y2="166"/>
-  <text class="lbl"  x="355" y="152">prev</text>
-  <text class="lbl"  x="435" y="152">next</text>
+  <text class="lbl mono"  x="355" y="152">prev</text>
+  <text class="lbl mono"  x="435" y="152">next</text>
   <rect class="hi"   x="315" y="172" width="160" height="26"/>
   <text class="val"  x="395" y="189">other fields</text>
 
@@ -92,8 +94,8 @@
   <text class="mem"  x="645" y="124">tasks</text>
   <line class="div"  x1="565" y1="130" x2="725" y2="130"/>
   <line class="div"  x1="645" y1="130" x2="645" y2="166"/>
-  <text class="lbl"  x="605" y="152">prev</text>
-  <text class="lbl"  x="685" y="152">next</text>
+  <text class="lbl mono"  x="605" y="152">prev</text>
+  <text class="lbl mono"  x="685" y="152">next</text>
   <rect class="hi"   x="565" y="172" width="160" height="26"/>
   <text class="val"  x="645" y="189">other fields</text>
 

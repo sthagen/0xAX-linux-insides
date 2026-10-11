@@ -150,7 +150,7 @@ After the new Global Descriptor Table is loaded, the next step is to load the ne
 
 The `load_stage1_idt` function is defined in [arch/x86/boot/compressed/idt_64.c](https://github.com/torvalds/linux/blob/master/arch/x86/boot/compressed/idt_64.c) and uses the `lidt` instruction to load the address of the new `Interrupt Descriptor Table`. For this moment, the `Interrupt Descriptor Table` has `NULL` entries to avoid handling the interrupts. As you can remember, the interrupts are disabled at this moment anyway. The valid interrupt handlers will be loaded after kernel relocation.
 
-The next steps after this are highly related to the setup of `5-level` paging, if it is configured using the `CONFIG_PGTABLE_LEVELS=5` kernel configuration option. This feature extends the virtual address space beyond the traditional 4-level paging scheme, but it is still relatively uncommon in practice and not essential for understanding the mainline boot flow. As mentioned in the [previous chapter](./linux-bootstrap-5.md), for clarity and focus, we'll set it aside and continue with the standard 4-level paging case.
+The next steps after this are highly related to the setup of `5-level` paging, if it is configured using the `CONFIG_PGTABLE_LEVELS=5` kernel configuration option. This feature extends the virtual address space beyond the traditional 4-level paging scheme, but it is still relatively uncommon in practice and not essential for understanding the mainline boot flow. As mentioned in the [previous chapter](./linux-bootstrap-4.md), for clarity and focus, we'll set it aside and continue with the standard 4-level paging case.
 
 ### Kernel relocation
 
@@ -249,7 +249,7 @@ We can skip the part of the code wrapped with `CONFIG_AMD_MEM_ENCRYPT` as it is 
 - `PF` - Page fault interrupt handler
 - `NMI` - Non-maskable interrupt handler
 
-The first interrupt handler is set because the `initialize_identity_maps` function (which we will see very soon) may trigger page fault exception. This exception can be triggered for example, when [Address space layout randomization](https://en.wikipedia.org/wiki/Address_space_layout_randomization) is enabled and such random physical and virtual addresses were used for which the page tables do have an entry.
+The first interrupt handler is set because the `initialize_identity_maps` function (which we will see very soon) may trigger page fault exception. This exception can be triggered for example, when [Address space layout randomization](https://en.wikipedia.org/wiki/Address_space_layout_randomization) is enabled and such random physical and virtual addresses were used for which the page tables do not have an entry.
 
 The second interrupt handler is needed to "handle" a triple-fault if such an interrupt appears during kernel decompression. So at least dummy NMI handler is needed.
 
@@ -261,7 +261,7 @@ After the `Interrupt Descriptor Table` is re-loaded, the `initialize_identity_ma
 	call	initialize_identity_maps
 ```
 
-This function is defined in [arch/x86/boot/compressed/ident_map_64.c](https://github.com/torvalds/linux/blob/master/arch/x86/boot/compressed/ident_map_64.c) and clears the memory area for the top-level page table identified by the `top_level_pgt` pointer to initialize a new page table. Yes, the kernel needs to initialize page tables one more time, despite we have seen the initialization and setup of the early page tables in the [previous chapter](./linux-bootstrap-4.md#set-up-paging). The reason for "one more" page table is that if the kernel was loaded at the `64-bit` entrypoint, it uses the page table built by the bootloader. Since the kernel was relocated to a new place, the decompressor code can overwrite these page tables during decompression.
+This function is defined in [arch/x86/boot/compressed/ident_map_64.c](https://github.com/torvalds/linux/blob/master/arch/x86/boot/compressed/ident_map_64.c) and sets up the identity-mapped page tables used by the decompressor. Depending on how the kernel was loaded, it either extends the early page tables or builds new ones. Yes, the kernel needs to initialize page tables one more time, despite we have seen the initialization and setup of the early page tables in the [previous chapter](./linux-bootstrap-4.md#set-up-paging). The reason for "one more" page table is that if the kernel was loaded at the `64-bit` entrypoint, it uses the page table built by the bootloader. Since the kernel was relocated to a new place, the decompressor code can overwrite these page tables during decompression.
 
 The new page table is built in a very similar way to the [previous page table](./linux-bootstrap-4.md#set-up-paging). Each [virtual address](https://en.wikipedia.org/wiki/Virtual_address_space) directly corresponds to the same [physical address](https://en.wikipedia.org/wiki/Physical_address). That is why it is called the identity mapping.
 
@@ -318,7 +318,7 @@ All of the actual work is performed by the `kernel_add_identity_map` function de
 	kernel_add_identity_map(cmdline, cmdline + COMMAND_LINE_SIZE);
 ```
 
-The `kernel_add_itntity_map` function walks the page table hierarchy and ensures that there is existing page table entries which provide 1:1 mapping into the virtual address space. If such entries does not exist, the new entry is allocated with the flags that we have seen during the initialization of the `mapping_info`.
+The `kernel_add_identity_map` function walks the page table hierarchy and ensures that there are existing page table entries which provide 1:1 mapping into the virtual address space. If such entries do not exist, the new entry is allocated with the flags that we have seen during the initialization of the `mapping_info`.
 
 After all the identity mapping page table entries were initialized, the kernel updates the `cr3` control register with the address of the top page table:
 
@@ -326,6 +326,10 @@ After all the identity mapping page table entries were initialized, the kernel u
 ```C
 	write_cr3(top_level_pgt);
 ```
+
+Since we came from `startup_32`, the first four gigabytes were already mapped, so the page tables still have the same structure that we saw in the previous chapter:
+
+![early-4g-page-tables](./images/early-4g-page-tables.svg)
 
 At this point, all the preparations needed to decompress the kernel image are done. Now the kernel decompressor code is ready to decompress the kernel:
 
@@ -343,7 +347,7 @@ At this point, all the preparations needed to decompress the kernel image are do
 	jmp	*%rax
 ```
 
-After the kernel is decompressed. The last instructions of the decompressor code transfers control to the Linux kernel entrypoint jumping on the address of the kernel's entrypoint. The early setup phase is complete, and the Linux kernel starts its job 🎉
+After the kernel is decompressed, the last instructions of the decompressor code transfer control to the Linux kernel entrypoint jumping on the address of the kernel's entrypoint. The early setup phase is complete, and the Linux kernel starts its job 🎉
 
 In the next section, let's see how the kernel decompression works.
 
@@ -487,7 +491,7 @@ The kernel entrypoint is the `startup_64` function from [arch/x86/kernel/head_64
 
 ## Conclusion
 
-This is the end of the third part about Linux kernel insides. If you have questions or suggestions, feel free ping me on X - [0xAX](https://twitter.com/0xAX), drop me an [email](mailto:anotherworldofworld@gmail.com), or just create an [issue](https://github.com/0xAX/linux-insides/issues/new).
+This is the end of the fifth part about Linux kernel insides. If you have questions or suggestions, feel free ping me on X - [0xAX](https://twitter.com/0xAX), drop me an [email](mailto:anotherworldofworld@gmail.com), or just create an [issue](https://github.com/0xAX/linux-insides/issues/new).
 
 ## Links
 

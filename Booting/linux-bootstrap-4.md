@@ -232,7 +232,7 @@ We know both these addresses based on the experiment above, and as a result, we 
 
 The `call` instruction is used to get the physical address where the kernel is actually loaded. This trick works because after the `call` instruction is executed, the stack should have the return address on top. This return address will be exactly the address of the label `1`. 
 
-In the code above, the kernel sets up a temporary mini stack where the return address will be stored after the `call` instruction. Right after the call, we pop this address from the stack and save it in the `ebp` register. Using the last instruction, we subtract the difference between the address of the label `1` and the `startup_32` physical address using the `rva` macro and `subl` instruction, and store the result in the `ebp` register.
+In the code above, the kernel sets up a temporary mini stack where the return address will be stored after the `call` instruction. Right after the call, we pop this address from the stack and save it in the `ebp` register. Using the last instruction, we subtract the difference between the link-time addresses of the label `1` and `startup_32` using the `rva` macro and `subl` instruction, and store the result in the `ebp` register.
 
 The `rva` macro is defined in the same source code file and looks like this:
 
@@ -389,7 +389,7 @@ SECTIONS
 There are three sections at the beginning of the linker script above:
 
 - `.head.text` - section where we are now
-- `.rodaya..compressed` - section with the compressed kernel image
+- `.rodata..compressed` - section with the compressed kernel image
 - `.text` - section with the decompressor code
 
 The kernel decompression happens in-place, which is the same place where the compressed kernel is. This means that the parts of the decompressed kernel image will overwrite the parts of the compressed image during the decompression process. It may sound dangerous – if the decompressed part overwrites the decompressor code or the part of the compressed kernel image that is not decompressed yet, this will lead to code or image corruption.
@@ -601,9 +601,8 @@ Here we already fill four page directory tables with `2048` entries. The first e
 
 - Present
 - Read/Write
-- User
-- Page Cache Disable
-- Large Page 
+- Large Page
+- Global
 
 The two additional flags tell the processor to keep [TLB](https://en.wikipedia.org/wiki/Translation_lookaside_buffer) entry across reload of the value of the `cr3` register and use two-megabyte pages.
 
@@ -617,7 +616,11 @@ The page tables are now fully prepared. The last remaining step is to actually e
 	movl	%eax, %cr3
 ```
 
-From this moment, page tables that cover four gigabytes of memory are ready, and paging is enabled. The kernel is ready for transition into the long mode.
+From this moment, page tables that cover four gigabytes of memory are ready, and paging is enabled. The whole structure that the kernel has just built looks like this:
+
+![early-4g-page-tables](./images/early-4g-page-tables.svg)
+
+The kernel is ready for transition into the long mode.
 
 ## The transition into 64-bit mode
 

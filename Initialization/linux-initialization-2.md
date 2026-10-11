@@ -383,7 +383,7 @@ The `early_idt_handler_array` macro generates a contiguous block of executable c
 > [!NOTE]
 > There is one interesting detail about this padding. `0xcc` is the opcode for the [INT3](https://en.wikipedia.org/wiki/INT_(x86_instruction)#INT3) instruction, so if the padding is accidentally executed, it will cause a breakpoint exception rather than running random bytes.
 
-If we inspect the kernel image with [`objdump`](https://man7.org/linux/man-pages/man1/objdump.1.html), we can see these generated instructions:
+If we inspect the kernel image with [`objdump`](https://man.archlinux.org/man/objdump.1), we can see these generated instructions:
 
 ```bash
 objdump -d vmlinux | grep '<early_idt_handler_array>:' -A 24
@@ -586,4 +586,4 @@ Here is the list of the links that you may find useful when reading this chapter
 - [Page Fault](https://en.wikipedia.org/wiki/Page_fault)
 - [Model specific register](https://en.wikipedia.org/wiki/Model-specific_register)
 - [Microcode](https://en.wikipedia.org/wiki/Microcode)
-- [Previous part](https://0xax.gitbook.io/linux-insides/summary/initialization/linux-initialization-1)
+- [Previous part](./linux-initialization-1.md)

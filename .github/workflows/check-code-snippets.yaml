@@ -5,7 +5,19 @@ on:
   push:
     branches:
       - master
+    paths:
+      - '**/*.md'
+      - 'scripts/check_code_snippets.py'
+      - 'scripts/pyproject.toml'
+      - 'scripts/uv.lock'
+      - '.github/workflows/check-code-snippets.yaml'
   pull_request:
+    paths:
+      - '**/*.md'
+      - 'scripts/check_code_snippets.py'
+      - 'scripts/pyproject.toml'
+      - 'scripts/uv.lock'
+      - '.github/workflows/check-code-snippets.yaml'
 
 permissions:
   contents: read
@@ -23,12 +35,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v7
       - name: Setup uv
-        uses: astral-sh/setup-uv@v10.1.0
+        uses: astral-sh/setup-uv@v10.2.0
         with:
           enable-cache: true
           cache-dependency-glob: scripts/uv.lock
       - name: Validate code snippets
         env:
-          GIT_API_TOKEN: ${{ secrets.GIT_API_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GIT_API_TOKEN }}
         run: |
           uv run --project scripts --locked ./scripts/check_code_snippets.py .

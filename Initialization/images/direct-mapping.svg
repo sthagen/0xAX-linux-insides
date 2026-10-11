@@ -4,23 +4,38 @@
      style="background: transparent; background-color: transparent; color-scheme: light dark;"
      font-family="Helvetica">
   <style>
-    .box   { fill: #fdf6e3; stroke: #000000; stroke-width: 1; }
-    .hi    { fill: #eee8d5; stroke: none; }
-    .div   { stroke: #000000; stroke-width: 1; }
-    .dash  { stroke: #000000; stroke-width: 1; stroke-dasharray: 5 3; }
-    .ttl   { fill: #000000; font-size: 13px; text-anchor: middle; font-weight: bold; }
-    .lbl   { fill: #000000; font-size: 12px; text-anchor: middle; }
-    .lblL  { fill: #000000; font-size: 12px; text-anchor: end; }
-    .lblR  { fill: #000000; font-size: 12px; text-anchor: start; }
-    .val   { fill: #000000; font-size: 12px; text-anchor: middle; font-family: monospace; }
-    .valL  { fill: #000000; font-size: 12px; text-anchor: end;    font-family: monospace; }
-    .valR  { fill: #000000; font-size: 12px; text-anchor: start;  font-family: monospace; }
-    .dim   { fill: #000000; font-size: 12px; text-anchor: middle; }
+    .box   { fill: #fdf6e3; stroke: #000000; stroke-width: 1;
+             fill: light-dark(#fdf6e3, #201a0a); stroke: light-dark(#000000, #ffffff); }
+    .hi    { fill: #eee8d5; stroke: none;
+             fill: light-dark(#eee8d5, #2d2614); }
+    .div   { stroke: #000000; stroke-width: 1;
+             stroke: light-dark(#000000, #ffffff); }
+    .dash  { stroke: #000000; stroke-width: 1; stroke-dasharray: 3 3;
+             stroke: light-dark(#000000, #ffffff); }
+    .ttl   { fill: #000000; font-size: 13px; text-anchor: middle;
+             fill: light-dark(#000000, #ededed); }
+    .lbl   { fill: #000000; font-size: 12px; text-anchor: middle;
+             fill: light-dark(#000000, #ededed); }
+    .lblL  { fill: #000000; font-size: 12px; text-anchor: end;
+             fill: light-dark(#000000, #ededed); }
+    .lblR  { fill: #000000; font-size: 12px; text-anchor: start;
+             fill: light-dark(#000000, #ededed); }
+    .val   { fill: #000000; font-size: 12px; text-anchor: middle; font-family: monospace;
+             fill: light-dark(#000000, #ededed); }
+    .valL  { fill: #000000; font-size: 12px; text-anchor: end;    font-family: monospace;
+             fill: light-dark(#000000, #ededed); }
+    .valR  { fill: #000000; font-size: 12px; text-anchor: start;  font-family: monospace;
+             fill: light-dark(#000000, #ededed); }
+    .dim   { fill: #000000; font-size: 12px; text-anchor: middle;
+             fill: light-dark(#000000, #ededed); }
+    .ah   { fill: #000000; stroke: #000000; stroke-width: 1;
+            fill: light-dark(#000000, #ffffff); stroke: light-dark(#000000, #ffffff); }
+    .mono { font-family: monospace; }
   </style>
 
   <defs>
-    <marker id="arrow" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
-      <path d="M0,0 L7,3 L0,6 z" fill="#000000"/>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="7" refY="3.5" orient="auto" markerUnits="userSpaceOnUse" overflow="visible">
+      <path d="M7,3.5 L0,0 L1.75,3.5 L0,7 z" class="ah"/>
     </marker>
   </defs>
 
@@ -41,11 +56,11 @@
 
   <!-- faulting address label (left) -->
   <text class="lblL" x="150" y="190">faulting address</text>
-  <text class="valL" x="150" y="206">0xffff888001000000</text>
+  <text class="valL" x="150" y="206">0xFFFF888001000000</text>
 
   <!-- __PAGE_OFFSET label (base of the window) -->
-  <text class="lbl"  x="240" y="318">__PAGE_OFFSET</text>
-  <text class="val"  x="240" y="334">0xffff888000000000</text>
+  <text class="lbl mono"  x="240" y="318">__PAGE_OFFSET</text>
+  <text class="val"  x="240" y="334">0xFFFF888000000000</text>
 
   <!-- ===== physical bar ===== -->
   <rect class="box" x="495" y="60" width="160" height="240"/>

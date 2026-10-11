@@ -205,7 +205,7 @@ After initialization of callbacks for writing to a serial port, the next step is
 	memcpy(&boot_params.hdr, &hdr, sizeof(hdr));
 ```
 
-Do not mix this `memcpy` with the function from the C standard library - [memcpy](https://man7.org/linux/man-pages/man3/memcpy.3.html). During the time when the kernel is in the early initialization phase, there is no way to load any library. For this reason, an operating system kernel provides own implementation of such functions. The kernel's `memcpy` defined in the [copy.S](https://github.com/torvalds/linux/blob/master/arch/x86/boot/copy.S). If you already started to miss an assembly code, this is the high time to bring some back:
+Do not mix this `memcpy` with the function from the C standard library - [memcpy](https://man.archlinux.org/man/memcpy.3). During the time when the kernel is in the early initialization phase, there is no way to load any library. For this reason, an operating system kernel provides own implementation of such functions. The kernel's `memcpy` defined in the [copy.S](https://github.com/torvalds/linux/blob/master/arch/x86/boot/copy.S). If you already started to miss an assembly code, this is the high time to bring some back:
 
 <!-- https://raw.githubusercontent.com/torvalds/linux/refs/heads/master/arch/x86/boot/copy.S#L18-L32 -->
 ```assembly
@@ -329,7 +329,7 @@ The GRUB bootloader sets this value to:
 #define GRUB_LINUX_HEAP_END_OFFSET	(0x9000 - 0x200)
 ```
 
-Based on these values, the end of the heap pointed by the `heap_end` will be at the `0x9000` offset from the end of the kernel setup image. To avoid the case when the heap and stack overlap, there is an additional check. It sets the end of the heap equal to the end of the stack if the first one is greater than the second. Having this, the heap memory area will be located above the `bss` area till the stack. So, the memory map will look like:
+Based on these values, the end of the heap pointed by the `heap_end` will be at the `0x9000` offset from the beginning of the real-mode code. To avoid the case when the heap and stack overlap, there is an additional check. It sets the end of the heap equal to the end of the stack if the first one is greater than the second. Having this, the heap memory area will be located above the `bss` area till the stack. So, the memory map will look like:
 
 ![early-heap](./images/early-heap.svg)
 
